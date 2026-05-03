@@ -1,0 +1,20 @@
+package com.order_management_system.order_service.config;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+
+@Configuration
+public class JacksonConfiguration {
+
+    @Bean
+    @Primary
+    public ObjectMapper objectMapper() {
+        return new ObjectMapper()
+                .configure(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY, true)
+                .configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
+    }
+}
