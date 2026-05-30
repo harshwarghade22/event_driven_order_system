@@ -2,7 +2,6 @@ package com.order_management_system.order_service.dto;
 
 import java.util.UUID;
 
-import jakarta.annotation.Generated;
 import lombok.Getter;
 import lombok.Setter;
 

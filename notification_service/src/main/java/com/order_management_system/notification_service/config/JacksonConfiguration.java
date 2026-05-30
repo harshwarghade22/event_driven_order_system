@@ -1,4 +1,4 @@
-package com.order_management_system.order_service.config;
+package com.order_management_system.notification_service.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.MapperFeature;

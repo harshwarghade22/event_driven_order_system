@@ -1,13 +1,17 @@
 package com.order_management_system.order_service.service;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.order_management_system.order_service.dto.ErrorResponseDto;
+import com.order_management_system.order_service.mapper.EventMapper;
+import com.order_management_system.order_service.model.OrderCreatedEvent;
+import com.order_management_system.order_service.producer.OrderEventProducer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,7 +25,6 @@ import com.order_management_system.order_service.repository.OrderRepository;
 import com.order_management_system.order_service.repository.OrderItemRepository;
 import com.order_management_system.order_service.model.Order;
 import com.order_management_system.order_service.model.OrderItem;
-import org.springframework.web.bind.annotation.RequestHeader;
 
 @Service
 public class OrderService {
@@ -40,7 +43,13 @@ public class OrderService {
     @Autowired
     private ObjectMapper objectMapper;
 
-    public ResponseEntity<?> createOrder(OrderRequestDto request, @RequestHeader("Idempotency-Key") String key) {
+    @Autowired
+    private EventMapper eventMapper;
+
+    @Autowired
+    private OrderEventProducer orderEventProducer;
+
+    public ResponseEntity<?> createOrder(OrderRequestDto request, String key) {
 
         String requestHash = orderRequestHasher.hash(request);
 
@@ -66,14 +75,18 @@ public class OrderService {
         order.setCreatedAt(LocalDateTime.now());
         orderRepository.save(order);
 
+        List<OrderItem> savedItems = new ArrayList<>();
         for (OrderItemDto orderItems : request.getItems()) {
             OrderItem orderItem = new OrderItem();
             orderItem.setOrderId(String.valueOf(orderId));
             orderItem.setProductId(orderItems.getProductId());
             orderItem.setQuantity(orderItems.getQuantity());
             itemRepository.save(orderItem);
+            savedItems.add(orderItem);
         }
-        
+
+        OrderCreatedEvent event = eventMapper.map(order, savedItems);
+        orderEventProducer.publish(event);
 
         OrderResponseDto response = new OrderResponseDto();
         response.setOrderId(orderId);
